@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Will you be my Valentine?</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --bg1: #ffd6e7;
+      --bg2: #ffeef6;
+      --card: #ffffffcc;
+      --yes: #ff3b7a;
+      --yesHover: #ff1f68;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top, var(--bg2), var(--bg1));
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+      padding: 16px;
+    }
+
+    #confettiCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .card {
+      width: min(720px, 92vw);
+      padding: 26px 22px;
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      border-radius: 22px;
+      text-align: center;
+      box-shadow: 0 18px 60px rgba(0,0,0,.15);
+    }
+
+    h1 {
+      font-size: clamp(26px, 4vw, 44px);
+      margin: 12px 0 18px;
+    }
+
+    .button-zone {
+      position: relative;
+      width: min(520px, 92%);
+      height: 160px;
+      margin: 0 auto;
+    }
+
+    button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 16px 26px;
+      font-size: 18px;
+      font-weight: 800;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(0,0,0,.14);
+      transition: transform .15s ease, background .15s ease;
+      user-select: none;
+    }
+
+    #yesBtn {
+      left: 18%;
+      background: var(--yes);
+      color: #fff;
+    }
+
+    #noBtn {
+      left: 62%;
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .hint {
+      margin-top: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      min-height: 24px;
+    }
+
+    .result {
+      display: none;
+      margin-top: 18px;
+      animation: pop .35s ease;
+    }
+
+    @keyframes pop {
+      from { transform: scale(.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="confettiCanvas"></canvas>
+
+  <main class="card">
+    <h1>Fariha will you be my valentine? 💖</h1>
+
+    <section class="button-zone" id="zone">
+      <button id="yesBtn">Yes</button>
+      <button id="noBtn">No</button>
+    </section>
+
+    <div class="hint" id="hint">Go on… click one 😌</div>
+
+    <section class="result" id="result">
+      <h2>I knew you would say yessssss wifeyyy 💕🥰</h2>
+      <img
+        id="loveGif"
+        src="https://i.giphy.com/media/l4FGpP4lxGGgK5CBW/giphy.gif"
+        style="width:100%;max-width:380px;border-radius:18px"
+        alt="Cute romantic couple"
+      />
+    </section>
+  </main>
+
+  <script>
+    /* ---------- GIF FALLBACK ---------- */
+    const gifList = [
+      "https://i.giphy.com/media/l4FGpP4lxGGgK5CBW/giphy.gif",
+      "https://i.giphy.com/media/MDJ9IbxxvDUQM/giphy.gif",
+      "https://i.giphy.com/media/26BRv0ThflsHCqDrG/giphy.gif"
+    ];
+
+    let gifIndex = 0;
+    const loveGif = document.getElementById("loveGif");
+
+    loveGif.onerror = () => {
+      gifIndex++;
+      if (gifIndex < gifList.length) {
+        loveGif.src = gifList[gifIndex];
+      }
+    };
+
+    /* ---------- CONFETTI ---------- */
+    const confettiCanvas = document.getElementById("confettiCanvas");
+    function resizeCanvas() {
+      const dpr = devicePixelRatio || 1;
+      confettiCanvas.width = innerWidth * dpr;
+      confettiCanvas.height = innerHeight * dpr;
+      confettiCanvas.style.width = "100vw";
+      confettiCanvas.style.height = "100vh";
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    const confettiInstance = confetti.create(confettiCanvas, { resize: false });
+
+    function celebrate() {
+      confettiInstance({
+        particleCount: 320,
+        spread: 150,
+        startVelocity: 60,
+        origin: { x: 0.5, y: 0.6 }
+      });
+    }
+
+    /* ---------- ELEMENTS ---------- */
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const zone = document.getElementById("zone");
+    const hint = document.getElementById("hint");
+    const result = document.getElementById("result");
+
+    /* ---------- YES GROWS ---------- */
+    let yesScale = 1;
+    function growYes() {
+      yesScale = Math.min(2.6, yesScale + 0.12);
+      yesBtn.style.transform = `translateY(-50%) scale(${yesScale})`;
+    }
+
+    /* ---------- NO LOGIC ---------- */
+    let noCount = 0;
+    let noIsLocked = false;
+
+    const messages = [
+      "Are you suuuure? 🥺",
+      "Really really sure? 😢",
+      "My heart is cracking 💔",
+      "This is emotional damage 😭",
+      "You’re enjoying this, aren’t you? 😏",
+      "You can't escape now 😈",
+      "I made this page for you 😩",
+      "At this point just say yes already 😈",
+      "Your smile is worth a yes 😍",
+      "Last chance before I cry fr 🥺🥺🥺"
+    ];
+
+    const noTexts = [
+      "No 🥺",
+      "Nope 🙈",
+      "Still No 🤭",
+      "Big NO 😤",
+      "Always No 🙄",
+      "Hehe No 😈"
+    ];
+
+    function moveNoRandom() {
+      const z = zone.getBoundingClientRect();
+      const b = noBtn.getBoundingClientRect();
+      noBtn.style.left = Math.random() * (z.width - b.width) + "px";
+      noBtn.style.top  = Math.random() * (z.height - b.height) + "px";
+    }
+
+    noBtn.addEventListener("click", e => {
+      if (noIsLocked) {
+        e.preventDefault();
+        moveNoRandom();
+        return;
+      }
+
+      e.preventDefault();
+      growYes();
+      moveNoRandom();
+
+      hint.textContent = messages[noCount % messages.length];
+      noBtn.textContent = noTexts[noCount];
+
+      if (noCount === noTexts.length - 1) {
+        noIsLocked = true; // Hehe No reached
+      }
+
+      noCount++;
+    });
+
+    /* ---------- PERMANENT EVADE AFTER HEHE NO ---------- */
+    function evadeForever() {
+      if (noIsLocked) {
+        moveNoRandom();
+      }
+    }
+
+    noBtn.addEventListener("mouseenter", evadeForever);
+    noBtn.addEventListener("touchstart", evadeForever, { passive: true });
+
+    /* ---------- YES CLICK ---------- */
+    yesBtn.addEventListener("click", () => {
+      zone.style.display = "none";
+      hint.style.display = "none";
+      result.style.display = "block";
+      resizeCanvas();
+      celebrate();
+    });
+  </script>
+</body>
+</html>
